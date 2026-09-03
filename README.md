@@ -1,2 +1,12 @@
-# Real-portfolio-tracker-2
-Portfolio-tracker
+# 📊 מעקב תיק השקעות
+
+תיק השקעות אישי עם עדכון מחירים אוטומטי.
+
+## שימוש
+פתח את הקישור: https://YOUR-USERNAME.github.io/portfolio-tracker/
+
+## תכונות
+- מעקב 20 ניירות (ישראל + חו"ל)
+- עדכון מחירים כל 60 שניות
+- גרפים, ספארקליינים, התראות
+- שמירה אוטומטית ב-localStorage
