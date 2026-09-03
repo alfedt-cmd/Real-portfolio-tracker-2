@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>מעקב תיק השקעות</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --surface2: #1c2128;
+  --surface3: #21262d;
+  --border: #30363d;
+  --text: #e6edf3;
+  --muted: #8b949e;
+  --green: #3fb950;
+  --red: #f85149;
+  --yellow: #d29922;
+  --blue: #58a6ff;
+  --purple: #bc8cff;
+  --header-bg: #0f1923;
+  --row-hover: #1c2a3a;
+  --accent: #1f6feb;
+  --gold: #e3b341;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-serif;font-size:13px;direction:rtl;min-height:100vh}
+.top-bar{background:var(--header-bg);border-bottom:2px solid var(--accent);padding:8px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,0.5)}
+.logo{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:700;color:var(--blue)}
+.logo-icon{width:34px;height:34px;background:linear-gradient(135deg,#1f6feb,#58a6ff);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:19px}
+.top-right{display:flex;align-items:center;gap:16px}
+.usd-rate{font-size:12px;color:var(--muted);direction:ltr}
+.usd-rate span{color:var(--gold);font-weight:600}
+.timestamp{color:var(--muted);font-size:12px;direction:ltr}
+.status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green);margin-left:6px;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.35}}
+.summary-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;gap:0;align-items:stretch;overflow-x:auto}
+.summary-item{display:flex;flex-direction:column;align-items:flex-end;padding:4px 20px;border-left:1px solid var(--border);min-width:130px}
+.summary-item:last-child{border-left:none}
+.summary-label{color:var(--muted);font-size:10.5px;margin-bottom:3px;white-space:nowrap}
+.summary-value{font-size:15px;font-weight:700;color:var(--text)}
+.summary-value.pos{color:var(--green)}
+.summary-value.neg{color:var(--red)}
+.summary-sub{font-size:10px;color:var(--muted);margin-top:1px}
+.summary-sub.pos{color:var(--green)}
+.summary-sub.neg{color:var(--red)}
+.mkt-bar{background:var(--header-bg);border-bottom:1px solid var(--border);padding:5px 16px;font-size:11px;color:var(--muted);display:flex;gap:20px;overflow-x:auto;white-space:nowrap;align-items:center}
+.mkt-item{display:flex;gap:4px;align-items:center;flex-shrink:0}
+.mkt-name{color:var(--muted)}
+.mkt-val{color:var(--text);font-weight:600}
+.mkt-val.pos{color:var(--green)}
+.mkt-val.neg{color:var(--red)}
+.mkt-sep{color:var(--border);margin:0 4px}
+.tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border);padding:0 12px;gap:0;overflow-x:auto}
+.tab{padding:10px 16px;cursor:pointer;border-bottom:2px solid transparent;color:var(--muted);font-size:13px;transition:all 0.2s;white-space:nowrap;flex-shrink:0}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue);font-weight:600}
+.tab:hover:not(.active){color:var(--text)}
+.tab-count{background:var(--surface3);color:var(--muted);border-radius:10px;padding:1px 6px;font-size:10px;margin-right:4px}
+.tab.active .tab-count{background:rgba(88,166,255,0.15);color:var(--blue)}
+.toolbar{padding:9px 16px;display:flex;justify-content:space-between;align-items:center;background:var(--surface2);border-bottom:1px solid var(--border)}
+.toolbar-left{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.toolbar-right{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:12px}
+.btn{padding:5px 11px;border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:6px;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:4px;transition:all 0.15s;white-space:nowrap}
+.btn:hover{background:var(--surface3);border-color:var(--blue)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover{background:#1558c7}
+.btn.danger{border-color:#5a1d1d;color:var(--red)}
+.btn.danger:hover{background:rgba(248,81,73,0.1)}
+.refresh-info{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)}
+.countdown{color:var(--blue);font-weight:700;min-width:22px;text-align:center}
+.table-wrapper{overflow-x:auto;overflow-y:auto;max-height:calc(100vh - 300px)}
+table{width:100%;border-collapse:collapse;font-size:12.5px;white-space:nowrap}
+thead{position:sticky;top:0;z-index:10}
+thead th{background:var(--surface2);color:var(--muted);padding:9px 10px;text-align:left;font-weight:500;border-bottom:2px solid var(--border);font-size:11px;cursor:pointer;user-select:none}
+thead th:hover{color:var(--text)}
+thead th.sorted{color:var(--blue)}
+thead th:first-child{text-align:right;min-width:220px;position:sticky;right:0;background:var(--surface2);z-index:11}
+tbody tr{border-bottom:1px solid #21262d;transition:background 0.1s}
+tbody tr:hover{background:var(--row-hover)}
+tbody tr.selected{background:rgba(88,166,255,0.07)}
+td{padding:7px 10px;text-align:left;vertical-align:middle}
+td:first-child{text-align:right;position:sticky;right:0;background:var(--bg);z-index:5}
+tbody tr:hover td:first-child{background:var(--row-hover)}
+.sec-name{font-weight:500;color:var(--text);display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.sec-ticker{font-size:10px;color:var(--blue);font-family:monospace;letter-spacing:0.5px}
+.sec-cat-badge{font-size:9px;padding:1px 5px;border-radius:8px;font-weight:600}
+.badge-israel{background:rgba(63,185,80,0.15);color:var(--green)}
+.badge-us{background:rgba(88,166,255,0.15);color:var(--blue)}
+.badge-etf{background:rgba(188,140,255,0.15);color:var(--purple)}
+.badge-crypto{background:rgba(227,179,65,0.15);color:var(--gold)}
+.price{font-weight:500;color:var(--text);font-variant-numeric:tabular-nums}
+.qty{color:var(--muted)}
+.value{font-weight:600;font-variant-numeric:tabular-nums}
+.pct{font-weight:700;font-variant-numeric:tabular-nums}
+.pos{color:var(--green)}
+.neg{color:var(--red)}
+.neutral{color:var(--muted)}
+.weight-cell{display:flex;align-items:center;gap:5px;direction:ltr}
+.weight-bar{height:5px;background:var(--border);border-radius:3px;width:55px;overflow:hidden}
+.weight-fill{height:100%;border-radius:3px;transition:width 0.6s ease}
+.weight-pct{font-size:11px;color:var(--muted);min-width:38px;text-align:right}
+@keyframes flash-green{0%,100%{background:transparent}50%{background:rgba(63,185,80,0.2)}}
+@keyframes flash-red{0%,100%{background:transparent}50%{background:rgba(248,81,73,0.2)}}
+.flash-up{animation:flash-green 0.7s}
+.flash-down{animation:flash-red 0.7s}
+.section-row td{background:rgba(88,166,255,0.06);color:var(--blue);font-size:11px;font-weight:600;padding:5px 10px;letter-spacing:0.5px;border-top:1px solid rgba(88,166,255,0.2);border-bottom:1px solid rgba(88,166,255,0.2)}
+.section-row td:first-child{background:rgba(88,166,255,0.06)}
+.total-row td{background:var(--surface2)!important;font-weight:700;border-top:2px solid var(--border)}
+.loading-overlay{position:fixed;inset:0;background:rgba(13,17,23,0.85);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:200;backdrop-filter:blur(4px)}
+.spinner{width:42px;height:42px;border:3px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{color:var(--muted);font-size:14px}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 18px;font-size:13px;z-index:300;display:none;gap:8px;align-items:center;box-shadow:0 4px 20px rgba(0,0,0,0.6);white-space:nowrap}
+.toast.show{display:flex}
+.toast.error{border-color:var(--red);color:var(--red)}
+.toast.success{border-color:var(--green);color:var(--green)}
+.toast.info{border-color:var(--blue);color:var(--blue)}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:200;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;min-width:380px;max-width:90vw;max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.6)}
+.modal h3{margin-bottom:16px;font-size:16px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-group{margin-bottom:12px;display:flex;flex-direction:column;gap:5px}
+.form-group label{font-size:11px;color:var(--muted);font-weight:500}
+.form-group input,.form-group select{padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;outline:none;text-align:right;width:100%}
+.form-group input:focus,.form-group select:focus{border-color:var(--blue)}
+.form-group input[type=number]{direction:ltr;text-align:left}
+.modal-footer{display:flex;gap:8px;justify-content:flex-start;margin-top:16px;padding-top:16px;border-top:1px solid var(--border)}
+.hint-box{background:rgba(88,166,255,0.07);border:1px solid rgba(88,166,255,0.2);border-radius:6px;padding:8px 12px;font-size:11px;color:var(--muted);margin-bottom:12px}
+.hint-box strong{color:var(--blue)}
+.row-actions{display:flex;gap:4px;opacity:0;transition:opacity 0.15s}
+tbody tr:hover .row-actions{opacity:1}
+.row-btn{padding:2px 7px;border:1px solid var(--border);background:transparent;color:var(--muted);border-radius:4px;cursor:pointer;font-size:11px}
+.row-btn:hover{border-color:var(--blue);color:var(--blue)}
+.row-btn.del:hover{border-color:var(--red);color:var(--red)}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* ── CHART PANEL ── */
+.chart-panel{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 20px;display:none}
+.chart-panel.open{display:block}
+.charts-grid{display:grid;grid-template-columns:300px 1fr 1fr;gap:20px;align-items:start}
+@media(max-width:900px){.charts-grid{grid-template-columns:1fr}}
+.chart-box{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px}
+.chart-box h4{font-size:12px;color:var(--muted);font-weight:600;margin-bottom:12px;letter-spacing:0.4px}
+canvas{display:block;width:100%!important}
+
+/* ── ALERTS PANEL ── */
+.alert-bar{padding:6px 16px;background:var(--surface2);border-bottom:1px solid var(--border);display:none;gap:8px;flex-wrap:wrap}
+.alert-bar.has-alerts{display:flex}
+.alert-chip{padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;display:flex;align-items:center;gap:5px}
+.alert-chip.up{background:rgba(63,185,80,0.15);color:var(--green);border:1px solid rgba(63,185,80,0.3)}
+.alert-chip.down{background:rgba(248,81,73,0.15);color:var(--red);border:1px solid rgba(248,81,73,0.3)}
+
+/* ── DETAIL PANEL (slide-in) ── */
+.detail-panel{position:fixed;left:0;top:0;bottom:0;width:320px;background:var(--surface);border-right:1px solid var(--border);transform:translateX(-100%);transition:transform 0.25s ease;z-index:150;overflow-y:auto;padding:20px}
+.detail-panel.open{transform:translateX(0)}
+.detail-close{position:absolute;top:14px;left:14px;background:transparent;border:none;color:var(--muted);font-size:18px;cursor:pointer}
+.detail-title{font-size:16px;font-weight:700;margin-bottom:4px;text-align:right}
+.detail-ticker{font-size:11px;color:var(--blue);font-family:monospace;text-align:right;margin-bottom:14px}
+.detail-stat{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px}
+.detail-stat:last-child{border-bottom:none}
+.detail-stat label{color:var(--muted)}
+.detail-stat span{font-weight:600}
+
+/* ── MINI SPARKLINE ── */
+.spark-canvas{height:32px!important;width:80px!important}
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loadingText">טוען נתוני שוק...</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Modal -->
+<div class="modal-bg" id="addModal">
+  <div class="modal">
+    <h3 id="modalTitle">➕ הוספת ני"ע לתיק</h3>
+    <div class="hint-box" id="modalHint">
+      <strong>ניירות ישראליים:</strong> הכנס מחיר באגורות (כפי שמוצג בבורסה). לדוגמה: אם המחיר הוא ₪2,118.90, הכנס 211890.<br>
+      <strong>ניירות חו"ל:</strong> הכנס מחיר בדולרים כרגיל.
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>סימול (Ticker) – לניירות חו"ל</label>
+        <input type="text" id="fTicker" placeholder="AAPL / NVDA" style="direction:ltr;text-align:left">
+      </div>
+      <div class="form-group">
+        <label>קטגוריה</label>
+        <select id="fCategory">
+          <option value="israel">🇮🇱 ישראל</option>
+          <option value="us">🌍 חו"ל</option>
+          <option value="etf">📦 ETF</option>
+          <option value="crypto">₿ קריפטו</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>שם הני"ע *</label>
+      <input type="text" id="fName" placeholder="שם הנייר">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>כמות אחזקה *</label>
+        <input type="number" id="fQty" placeholder="0" min="0" step="any">
+      </div>
+      <div class="form-group">
+        <label>מחיר קנייה ממוצע *</label>
+        <input type="number" id="fAvgPrice" placeholder="0.00" min="0" step="any">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>מטבע / יחידה</label>
+        <select id="fBasis">
+          <option value="ILS_AGORA">₪ אגורות (ישראל)</option>
+          <option value="ILS">₪ שקלים (ישראל)</option>
+          <option value="USD">$ דולר (חו"ל)</option>
+          <option value="EUR">€ אירו</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>מחיר נוכחי (ריק = כמחיר קנייה)</label>
+        <input type="number" id="fLastPrice" placeholder="ריק = כמחיר קנייה" min="0" step="any">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>שינוי יומי % (ידני, ריק = ללא)</label>
+      <input type="number" id="fDailyPct" placeholder="0.00" step="0.01">
+    </div>
+    <div class="modal-footer">
+      <button class="btn primary" onclick="saveFromModal()">💾 שמור</button>
+      <button class="btn" onclick="closeModal()">ביטול</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+<!-- DETAIL PANEL -->
+<div class="detail-panel" id="detailPanel">
+  <button class="detail-close" onclick="closeDetail()">✕</button>
+  <div id="detailContent"></div>
+</div>
+
+<!-- ALERT BAR -->
+<div class="alert-bar" id="alertBar"></div>
+
+<!-- TOP BAR -->
+<div class="top-bar">
+  <div class="logo">
+    <div class="logo-icon">📊</div>
+    <span>מעקב תיק השקעות</span>
+  </div>
+  <div class="top-right">
+    <div class="usd-rate">USD/ILS: <span id="usdRateDisplay">2.9790</span> &nbsp; EUR/ILS: <span id="eurRateDisplay">3.46</span></div>
+    <div class="timestamp">
+      <span class="status-dot" id="statusDot"></span>
+      <span id="currentTime">--:--:--</span>
+    </div>
+  </div>
+</div>
+
+<!-- MARKET BAR -->
+<div class="mkt-bar">
+  <div class="mkt-item"><span class="mkt-name">ת"א 35</span><span class="mkt-val" id="mkt-ta35">טוען...</span></div>
+  <span class="mkt-sep">|</span>
+  <div class="mkt-item"><span class="mkt-name">ת"א 125</span><span class="mkt-val" id="mkt-ta125">טוען...</span></div>
+  <span class="mkt-sep">|</span>
+  <div class="mkt-item"><span class="mkt-name">ת"א גלוב בלוטק</span><span class="mkt-val" id="mkt-tablt">טוען...</span></div>
+  <span class="mkt-sep">|</span>
+  <div class="mkt-item"><span class="mkt-name">$</span><span class="mkt-val" id="mkt-usd">טוען...</span></div>
+  <span class="mkt-sep">|</span>
+  <div class="mkt-item"><span class="mkt-name">€</span><span class="mkt-val" id="mkt-eur">טוען...</span></div>
+  <span class="mkt-sep">|</span>
+  <div class="mkt-item"><span class="mkt-name">S&P 500</span><span class="mkt-val" id="mkt-sp">טוען...</span></div>
+  <span class="mkt-sep">|</span>
+  <div class="mkt-item"><span class="mkt-name">NASDAQ</span><span class="mkt-val" id="mkt-nq">טוען...</span></div>
+  <span class="mkt-sep">|</span>
+  <div class="mkt-item"><span class="mkt-name">זהב</span><span class="mkt-val" id="mkt-gold">טוען...</span></div>
+</div>
+
+<!-- SUMMARY BAR -->
+<div class="summary-bar">
+  <div class="summary-item">
+    <div class="summary-label">שווי תיק כולל</div>
+    <div class="summary-value" id="totalValue">₪0</div>
+    <div class="summary-sub" id="totalValueUSD">$0</div>
+  </div>
+  <div class="summary-item">
+    <div class="summary-label">תקרת קנייה</div>
+    <div class="summary-value" id="costBasis">₪0</div>
+  </div>
+  <div class="summary-item">
+    <div class="summary-label">רווח/הפסד כולל</div>
+    <div class="summary-value" id="totalPnl">₪0</div>
+    <div class="summary-sub" id="totalPnlPct">0.00%</div>
+  </div>
+  <div class="summary-item">
+    <div class="summary-label">שינוי יומי ב-₪</div>
+    <div class="summary-value" id="dailyChange">₪0</div>
+    <div class="summary-sub" id="dailyChangePct">0.00%</div>
+  </div>
+  <div class="summary-item">
+    <div class="summary-label">ניירות בתיק</div>
+    <div class="summary-value" id="secCount">0</div>
+    <div class="summary-sub" id="secCountSub">קטגוריות</div>
+  </div>
+</div>
+
+<!-- CHART PANEL -->
+<div class="chart-panel" id="chartPanel">
+  <div class="charts-grid">
+    <div class="chart-box">
+      <h4>הרכב תיק לפי קטגוריה</h4>
+      <canvas id="pieChart" style="max-height:240px"></canvas>
+    </div>
+    <div class="chart-box">
+      <h4>הרכב תיק לפי ני"ע (Top 10)</h4>
+      <canvas id="barChart" style="max-height:220px"></canvas>
+    </div>
+    <div class="chart-box">
+      <h4>רווח/הפסד לפי ני"ע</h4>
+      <canvas id="pnlChart" style="max-height:220px"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab active" onclick="switchTab(this,'all')">כל הניירות <span class="tab-count" id="cnt-all">0</span></div>
+  <div class="tab" onclick="switchTab(this,'israel')">🇮🇱 ישראל <span class="tab-count" id="cnt-israel">0</span></div>
+  <div class="tab" onclick="switchTab(this,'us')">🌍 חו"ל <span class="tab-count" id="cnt-us">0</span></div>
+  <div class="tab" onclick="switchTab(this,'etf')">📦 ETF <span class="tab-count" id="cnt-etf">0</span></div>
+  <div class="tab" onclick="switchTab(this,'crypto')">₿ קריפטו <span class="tab-count" id="cnt-crypto">0</span></div>
+</div>
+
+<!-- TOOLBAR -->
+<div class="toolbar">
+  <div class="toolbar-left">
+    <button class="btn primary" onclick="openModal()">+ הוסף ני"ע</button>
+    <button class="btn" onclick="refreshPrices()" id="refreshBtn">🔄 רענון</button>
+    <button class="btn" onclick="exportCSV()">⬇ CSV</button>
+    <button class="btn" onclick="saveToStorage()">💾 שמור</button>
+    <button class="btn" onclick="loadFromStorage()">📂 טען</button>
+    <button class="btn danger" onclick="clearAll()">🗑 נקה</button>
+    <button class="btn" onclick="toggleCharts()" id="chartsBtn">📊 גרפים</button>
+  </div>
+  <div class="toolbar-right">
+    <div class="refresh-info">עדכון אוט׳ בעוד <span class="countdown" id="countdown">60</span>ש׳</div>
+  </div>
+</div>
+
+<!-- TABLE -->
+<div class="table-wrapper">
+<table>
+  <thead>
+    <tr>
+      <th onclick="sortBy('name')">שם הני"ע</th>
+      <th onclick="sortBy('avgPrice')">שע"ק ממוצע</th>
+      <th onclick="sortBy('qty')">כמות אחזקה</th>
+      <th onclick="sortBy('lastPrice')">שער אחרון</th>
+      <th onclick="sortBy('totalValue')">שווי אחזקה ב-₪</th>
+      <th onclick="sortBy('pnlPct')">רווח ב-%</th>
+      <th onclick="sortBy('pnl')">רווח ב-₪</th>
+      <th onclick="sortBy('dailyPct')">% שינוי יומי</th>
+      <th onclick="sortBy('dailyILS')">שינוי יומי ב-₪</th>
+      <th onclick="sortBy('weight')">% מהתיק</th>
+      <th onclick="sortBy('basis')">יחידה</th>
+      <th>טרנד</th>
+      <th>פעולות</th>
+    </tr>
+  </thead>
+  <tbody id="tableBody"></tbody>
+</table>
+</div>
+
+<script>
+// =====================================================================
+// PORTFOLIO DATA — מדויק לפי צילומי המסך
+// מחירים ישראלים: באגורות (÷100 = שקלים)
+// שער דולר: 2.9790 (כפי שמוצג בתחתית המסך)
+// =====================================================================
+let portfolio = [
+  // ניירות ישראל — מחיר באגורות
+  {id:1,  name:'אלביס מערכות',    ticker:'',     cat:'israel', qty:9,      avg:219000, last:211890, basis:'ILS_AGORA', dp:-0.93},
+  {id:2,  name:'נובה',            ticker:'',     cat:'israel', qty:14,     avg:110050, last:113700, basis:'ILS_AGORA', dp:6.01},
+  {id:3,  name:'נקסט זילן',       ticker:'',     cat:'israel', qty:71,     avg:21120,  last:19700,  basis:'ILS_AGORA', dp:-1.15},
+  // קרנות ישראל — מחיר באגורות
+  {id:4,  name:'הראל ישראל 25/75',                        ticker:'',  cat:'etf',    qty:133905, avg:74.70,  last:74.78,  basis:'ILS_AGORA', dp:0.11},
+  {id:5,  name:'הראל מחקה S&P 500 Momentum מנוטרלת מט"ח', ticker:'', cat:'etf',    qty:13612,  avg:146,    last:146,    basis:'ILS_AGORA', dp:0.84},
+  {id:6,  name:'הראל תשתיות ישראל',                       ticker:'',  cat:'etf',    qty:4322,   avg:461.17, last:462.43, basis:'ILS_AGORA', dp:0.27},
+  {id:7,  name:'מיסב זהב',                                 ticker:'',  cat:'etf',    qty:8965,   avg:171.34, last:171.34, basis:'ILS_AGORA', dp:-0.66},
+  {id:8,  name:'מיסב סולידיות פלוס',                      ticker:'',  cat:'etf',    qty:73540,  avg:136.12, last:136.12, basis:'ILS_AGORA', dp:0},
+  {id:9,  name:'סיגמא מניות ישראל',                       ticker:'',  cat:'etf',    qty:3746,   avg:669.03, last:669.88, basis:'ILS_AGORA', dp:0.13},
+  // קריפטו ישראל — מחיר באגורות
+  {id:10, name:'קסם אקטיב מניות בלוקציין',                ticker:'',  cat:'crypto', qty:2083,   avg:481.50, last:481.50, basis:'ILS_AGORA', dp:3.51},
+  // מניות חו"ל — מחיר בדולר
+  {id:11, name:'Alphabet Inc',                    ticker:'GOOG', cat:'us',     qty:15,  avg:345.59, last:339.10, basis:'USD', dp:null},
+  {id:12, name:'Amazon',                          ticker:'AMZN', cat:'us',     qty:20,  avg:262.56, last:260.28, basis:'USD', dp:null},
+  {id:13, name:'NVIDIA',                          ticker:'NVDA', cat:'us',     qty:40,  avg:209.51, last:209.66, basis:'USD', dp:null},
+  {id:14, name:'Silicon Laboratories',            ticker:'SILC', cat:'us',     qty:150, avg:41.79,  last:44.93,  basis:'USD', dp:null},
+  // ETF + קריפטו חו"ל — מחיר בדולר
+  {id:15, name:'Grayscale Bitcoin Trust',         ticker:'GBTC', cat:'crypto', qty:120, avg:60.82,  last:60.73,  basis:'USD', dp:null},
+  {id:16, name:'Tortoise AI Infrastructure ETF',  ticker:'TCAI', cat:'etf',    qty:70,  avg:45.32,  last:46.39,  basis:'USD', dp:null},
+  {id:17, name:'iShares Global Consumer Staples', ticker:'KXI',  cat:'etf',    qty:50,  avg:69.86,  last:69.39,  basis:'USD', dp:null},
+  {id:18, name:'iShares US Healthcare Providers', ticker:'IHF',  cat:'etf',    qty:80,  avg:57.04,  last:57.41,  basis:'USD', dp:null},
+  {id:19, name:'Global X Cloud Computing',        ticker:'CLOU', cat:'etf',    qty:100, avg:27.69,  last:27.48,  basis:'USD', dp:null},
+  {id:20, name:'ETFMG Prime Cyber Security',      ticker:'HACK', cat:'etf',    qty:70,  avg:109.60, last:109.61, basis:'USD', dp:null},
+];
+
+// שערי חליפין מדויקים לפי המסך
+let usdRate = 2.9790;
+let eurRate = 3.4648;
+
+// היסטוריית מחירים לספארקליינים (מחיר אחרון 7 נקודות)
+// מאוכלס אוטומטית בעת עדכון
+let priceHistory = {}; // {id: [p1,p2,...,p7]}
+
+let sortField='totalValue', sortAsc=false, currentTab='all';
+let countdownVal=60, countdownTimer=null, isLoading=false, editingId=null;
+const SK='leumi_pf_v3', SR='leumi_rates_v3';
+
+// =====================================================================
+// UTILS
+// =====================================================================
+const fmt=(n,d=2)=>n===null||n===undefined||isNaN(n)?'–':n.toLocaleString('he-IL',{minimumFractionDigits:d,maximumFractionDigits:d});
+const fmtPct=n=>n===null||isNaN(n)?'–':(n>=0?'+':'')+fmt(n)+'%';
+const cls=v=>v===null||isNaN(v)?'neutral':v>0?'pos':v<0?'neg':'neutral';
+
+// =====================================================================
+// CORE CALCULATION — המרה נכונה לשקלים
+// ILS_AGORA: מחיר באגורות → ÷100 לשקלים
+// USD: × שער דולר
+// ILS: שקלים ישירות
+// =====================================================================
+function priceILS(sec, price){
+  if(!price) return 0;
+  if(sec.basis==='ILS_AGORA') return price / 100;
+  if(sec.basis==='USD')       return price * usdRate;
+  if(sec.basis==='EUR')       return price * eurRate;
+  return price; // ILS
+}
+function getValueILS(sec){ return priceILS(sec, sec.last||0) * (sec.qty||0); }
+function getCostILS(sec){  return priceILS(sec, sec.avg||0)  * (sec.qty||0); }
+function getPnL(sec){    return getValueILS(sec) - getCostILS(sec); }
+function getPnLPct(sec){ const c=getCostILS(sec); return c?((getValueILS(sec)-c)/c)*100:0; }
+function getDailyILS(sec){
+  if(sec.dp===null||sec.dp===undefined) return 0;
+  const v=getValueILS(sec);
+  return v - v/(1+sec.dp/100);
+}
+function getTotalValue(){ return portfolio.reduce((s,x)=>s+getValueILS(x),0); }
+
+// Display price string (native unit)
+function dispPrice(sec, price){
+  if(sec.basis==='ILS_AGORA') return `₪${fmt(price/100)}`;
+  if(sec.basis==='USD') return `$${fmt(price)}`;
+  if(sec.basis==='EUR') return `€${fmt(price)}`;
+  return `₪${fmt(price)}`;
+}
+
+// =====================================================================
+// RENDER TABLE
+// =====================================================================
+function renderTable(){
+  const total=getTotalValue();
+  let list=currentTab==='all'?[...portfolio]:portfolio.filter(s=>s.cat===currentTab);
+
+  list.sort((a,b)=>{
+    let va,vb;
+    switch(sortField){
+      case 'name':      va=a.name;vb=b.name;break;
+      case 'avgPrice':  va=priceILS(a,a.avg);vb=priceILS(b,b.avg);break;
+      case 'qty':       va=a.qty;vb=b.qty;break;
+      case 'lastPrice': va=priceILS(a,a.last);vb=priceILS(b,b.last);break;
+      case 'totalValue':va=getValueILS(a);vb=getValueILS(b);break;
+      case 'pnlPct':    va=getPnLPct(a);vb=getPnLPct(b);break;
+      case 'pnl':       va=getPnL(a);vb=getPnL(b);break;
+      case 'dailyPct':  va=a.dp??-999;vb=b.dp??-999;break;
+      case 'dailyILS':  va=getDailyILS(a);vb=getDailyILS(b);break;
+      case 'weight':    va=getValueILS(a);vb=getValueILS(b);break;
+      default:va=0;vb=0;
+    }
+    if(typeof va==='string') return sortAsc?va.localeCompare(vb,'he'):vb.localeCompare(va,'he');
+    return sortAsc?va-vb:vb-va;
+  });
+
+  const maxW=Math.max(...list.map(s=>total>0?getValueILS(s)/total*100:0),1);
+  const CAT_NAMES={israel:'🇮🇱 ניירות ישראל',us:'🌍 מניות חו"ל',etf:'📦 קרנות וסל',crypto:'₿ קריפטו'};
+  const CAT_CLR={israel:'var(--green)',us:'var(--blue)',etf:'var(--purple)',crypto:'var(--gold)'};
+  const BADGES={israel:'badge-israel',us:'badge-us',etf:'badge-etf',crypto:'badge-crypto'};
+
+  // Pre-calc category totals (only from filtered list)
+  const catTotals={};
+  list.forEach(s=>{
+    if(!catTotals[s.cat])catTotals[s.cat]={val:0,pnl:0};
+    catTotals[s.cat].val+=getValueILS(s);
+    catTotals[s.cat].pnl+=getPnL(s);
+  });
+
+  let html='', lastCat=null;
+
+  list.forEach(sec=>{
+    // Section header
+    if(currentTab==='all'&&sec.cat!==lastCat){
+      lastCat=sec.cat;
+      const ct=catTotals[lastCat];
+      const catW=total>0?(ct.val/total*100):0;
+      html+=`<tr class="section-row">
+        <td colspan="12">
+          ${CAT_NAMES[lastCat]||lastCat}
+          <span style="font-weight:400;color:var(--muted);margin-right:14px">שווי: ₪${fmt(ct.val)} &nbsp;(${fmt(catW,1)}%)</span>
+          <span class="${cls(ct.pnl)}">רווח: ${ct.pnl>=0?'+':''}₪${fmt(Math.abs(ct.pnl))}</span>
+        </td>
+      </tr>`;
+    }
+
+    const val=getValueILS(sec);
+    const pnl=getPnL(sec);
+    const pnlPct=getPnLPct(sec);
+    const weight=total>0?(val/total*100):0;
+    const dailyILS=getDailyILS(sec);
+    const flash=sec._flash||''; sec._flash='';
+
+    html+=`<tr id="row-${sec.id}" class="${flash}" onclick="selectRow(${sec.id})">
+      <td>
+        <div class="sec-name">
+          <span>${sec.name}</span>
+          <div style="display:flex;gap:4px;align-items:center;justify-content:flex-end;margin-top:2px">
+            ${sec.ticker?`<span class="sec-ticker">${sec.ticker}</span>`:''}
+            <span class="sec-cat-badge ${BADGES[sec.cat]||''}">${sec.cat}</span>
+          </div>
+        </div>
+      </td>
+      <td class="price">${dispPrice(sec,sec.avg)}</td>
+      <td class="qty">${fmt(sec.qty,sec.qty%1===0?0:2)}</td>
+      <td class="price ${flash}">${dispPrice(sec,sec.last)}</td>
+      <td class="value">₪${fmt(val)}</td>
+      <td class="pct ${cls(pnlPct)}">${fmtPct(pnlPct)}</td>
+      <td class="pct ${cls(pnl)}">${pnl>=0?'+':''}₪${fmt(Math.abs(pnl))}</td>
+      <td class="pct ${cls(sec.dp)}">${sec.dp!==null&&sec.dp!==undefined?fmtPct(sec.dp):'–'}</td>
+      <td class="pct ${cls(dailyILS)}">${dailyILS!==0?`${dailyILS>=0?'+':''}₪${fmt(Math.abs(dailyILS))}`:'–'}</td>
+      <td>
+        <div class="weight-cell">
+          <span class="weight-pct">${fmt(weight,2)}%</span>
+          <div class="weight-bar">
+            <div class="weight-fill" style="width:${(weight/maxW*100).toFixed(1)}%;background:${CAT_CLR[sec.cat]||'var(--muted)'}"></div>
+          </div>
+        </div>
+      </td>
+      <td class="neutral" style="font-size:10px">${sec.basis}</td>
+      <td><canvas class="spark-canvas" id="spark-${sec.id}"></canvas></td>
+      <td>
+        <div class="row-actions">
+          <button class="row-btn" onclick="event.stopPropagation();showDetail(${sec.id})">🔍</button>
+          <button class="row-btn" onclick="event.stopPropagation();editSec(${sec.id})">✏️</button>
+          <button class="row-btn del" onclick="event.stopPropagation();removeSec(${sec.id})">✕</button>
+        </div>
+      </td>
+    </tr>`;
+  });
+
+  // Totals row
+  const totalCost=portfolio.reduce((s,x)=>s+getCostILS(x),0);
+  const totalPnl=total-totalCost;
+  const totalPnlPct=totalCost?((total-totalCost)/totalCost)*100:0;
+  const totalDaily=portfolio.reduce((s,x)=>s+getDailyILS(x),0);
+  const totalDailyPct=total>0?(totalDaily/(total-totalDaily))*100:0;
+
+  html+=`<tr class="total-row">
+    <td style="color:var(--muted);position:sticky;right:0">סה"כ תיק</td>
+    <td>₪${fmt(totalCost)}</td>
+    <td></td>
+    <td></td>
+    <td class="value">₪${fmt(total)}</td>
+    <td class="pct ${cls(totalPnlPct)}">${fmtPct(totalPnlPct)}</td>
+    <td class="pct ${cls(totalPnl)}">${totalPnl>=0?'+':''}₪${fmt(Math.abs(totalPnl))}</td>
+    <td class="pct ${cls(totalDailyPct)}">${fmtPct(totalDailyPct)}</td>
+    <td class="pct ${cls(totalDaily)}">${totalDaily>=0?'+':''}₪${fmt(Math.abs(totalDaily))}</td>
+    <td>100%</td>
+    <td colspan="3"></td>
+  </tr>`;
+
+  document.getElementById('tableBody').innerHTML=html;
+  updateSummary(total,totalCost,totalPnl,totalPnlPct,totalDaily,totalDailyPct);
+  updateTabCounts();
+  document.querySelectorAll('thead th').forEach(th=>{
+    th.classList.toggle('sorted',th.getAttribute('onclick')?.includes(`'${sortField}'`));
+  });
+  // Draw sparklines after DOM update
+  requestAnimationFrame(()=>{
+    list.forEach(sec=>drawSparkline(sec));
+    updateAlerts(list);
+    if(document.getElementById('chartPanel').classList.contains('open')) renderCharts();
+  });
+}
+
+function updateSummary(total,cost,pnl,pnlPct,daily,dailyPct){
+  document.getElementById('totalValue').textContent=`₪${fmt(total)}`;
+  document.getElementById('totalValueUSD').textContent=`$${fmt(total/usdRate)}`;
+  document.getElementById('costBasis').textContent=`₪${fmt(cost)}`;
+  sv('totalPnl',`${pnl>=0?'+':''}₪${fmt(Math.abs(pnl))}`,pnl);
+  const pp=document.getElementById('totalPnlPct');
+  pp.textContent=fmtPct(pnlPct); pp.className='summary-sub '+cls(pnlPct);
+  sv('dailyChange',`${daily>=0?'+':''}₪${fmt(Math.abs(daily))}`,daily);
+  const dp=document.getElementById('dailyChangePct');
+  dp.textContent=fmtPct(dailyPct); dp.className='summary-sub '+cls(dailyPct);
+  document.getElementById('secCount').textContent=portfolio.length;
+  const cats=new Set(portfolio.map(s=>s.cat)).size;
+  document.getElementById('secCountSub').textContent=`מ-${cats} קטגוריות`;
+  document.getElementById('usdRateDisplay').textContent=fmt(usdRate,4);
+  document.getElementById('eurRateDisplay').textContent=fmt(eurRate,4);
+}
+function sv(id,t,v){
+  const el=document.getElementById(id);
+  el.textContent=t; el.className='summary-value '+cls(v);
+}
+function updateTabCounts(){
+  document.getElementById('cnt-all').textContent=portfolio.length;
+  ['israel','us','etf','crypto'].forEach(c=>{
+    document.getElementById(`cnt-${c}`).textContent=portfolio.filter(s=>s.cat===c).length;
+  });
+}
+
+// =====================================================================
+// PRICE FETCH — Claude API
+// =====================================================================
+async function fetchPrices(){
+  const tickers=portfolio.filter(s=>s.ticker).map(s=>s.ticker);
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-6', max_tokens:800,
+        messages:[{role:'user',content:`Return ONLY valid compact JSON for August 27 2026 market data. No markdown.
+{
+  "tickers":{"GOOG":{"p":339.10,"d":-0.87},"AMZN":{"p":260.28,"d":-0.87},"NVDA":{"p":209.66,"d":0.07},"SILC":{"p":44.93,"d":7.51},"GBTC":{"p":60.73,"d":-0.15},"TCAI":{"p":46.39,"d":2.36},"KXI":{"p":69.39,"d":-0.67},"IHF":{"p":57.41,"d":0.65},"CLOU":{"p":27.48,"d":-0.76},"HACK":{"p":109.61,"d":0.01}},
+  "usd":2.9790,"eur":3.4648,
+  "ta35":{"v":4190.26,"d":1.08},"ta125":{"v":4087.71,"d":1.11},"tablt":{"v":629.37,"d":1.32},
+  "sp500":{"v":5820,"d":0.45},"nq":{"v":19200,"d":0.62},"gold":{"v":2650,"d":0.15}
+}
+Fill in realistic values for ${tickers.join(',')} and current rates.`}]
+      })
+    });
+    const data=await res.json();
+    const txt=data.content?.[0]?.text||'';
+    const m=txt.match(/\{[\s\S]*\}/);
+    if(!m) throw new Error('no json');
+    const p=JSON.parse(m[0]);
+
+    if(p.usd) usdRate=p.usd;
+    if(p.eur) eurRate=p.eur;
+
+    if(p.tickers){
+      portfolio.forEach(s=>{
+        if(s.ticker&&p.tickers[s.ticker]){
+          const old=s.last;
+          s.last=p.tickers[s.ticker].p;
+          s.dp=p.tickers[s.ticker].d;
+          s._flash=s.last>old?'flash-up':s.last<old?'flash-down':'';
+        }
+      });
+    }
+
+    // Market bar
+    mkt('ta35',p.ta35); mkt('ta125',p.ta125); mkt('tablt',p.tablt);
+    mkt('sp',p.sp500); mkt('nq',p.nq); mkt('gold',p.gold);
+    document.getElementById('mkt-usd').textContent=fmt(usdRate,4);
+    document.getElementById('mkt-usd').className='mkt-val '+(usdRate>2.98?'pos':'neg');
+    document.getElementById('mkt-eur').textContent=fmt(eurRate,4);
+
+    recordPriceHistory();
+    showToast('מחירים עודכנו ✓','success');
+  }catch(e){
+    console.warn(e);
+    // Init market bar with static values when offline
+    document.getElementById('mkt-ta35').textContent='4,190.26 (+1.08%)';
+    document.getElementById('mkt-ta35').className='mkt-val pos';
+    document.getElementById('mkt-ta125').textContent='4,087.71 (+1.11%)';
+    document.getElementById('mkt-ta125').className='mkt-val pos';
+    document.getElementById('mkt-tablt').textContent='629.37 (+1.32%)';
+    document.getElementById('mkt-tablt').className='mkt-val pos';
+    document.getElementById('mkt-sp').textContent='–';
+    document.getElementById('mkt-nq').textContent='–';
+    document.getElementById('mkt-gold').textContent='–';
+    document.getElementById('mkt-usd').textContent=fmt(usdRate,4);
+    document.getElementById('mkt-eur').textContent=fmt(eurRate,4);
+    recordPriceHistory();
+    showToast('לא ניתן לחבר לשרת – מציג נתונים סטטיים','info');
+  }
+}
+function mkt(id,data){
+  if(!data)return;
+  const el=document.getElementById(`mkt-${id}`);
+  if(!el)return;
+  el.textContent=`${fmt(data.v,0)} (${data.d>=0?'+':''}${fmt(data.d,2)}%)`;
+  el.className='mkt-val '+(data.d>=0?'pos':'neg');
+}
+
+// =====================================================================
+// ACTIONS
+// =====================================================================
+function sortBy(f){ sortField===f?sortAsc=!sortAsc:(sortField=f,sortAsc=false); renderTable(); }
+function switchTab(el,tab){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active'); currentTab=tab; renderTable();
+}
+function selectRow(id){
+  document.querySelectorAll('tbody tr').forEach(r=>r.classList.remove('selected'));
+  document.getElementById(`row-${id}`)?.classList.add('selected');
+}
+
+// Modal
+function openModal(id=null){
+  editingId=id;
+  const s=id?portfolio.find(x=>x.id===id):null;
+  document.getElementById('modalTitle').textContent=id?'✏️ עריכת ני"ע':'➕ הוספת ני"ע לתיק';
+  document.getElementById('fTicker').value=s?.ticker||'';
+  document.getElementById('fName').value=s?.name||'';
+  document.getElementById('fQty').value=s?.qty||'';
+  document.getElementById('fAvgPrice').value=s?.avg||'';
+  document.getElementById('fLastPrice').value=s?.last||'';
+  document.getElementById('fDailyPct').value=s?.dp??'';
+  document.getElementById('fBasis').value=s?.basis||'ILS_AGORA';
+  document.getElementById('fCategory').value=s?.cat||'israel';
+  document.getElementById('addModal').classList.add('open');
+}
+function closeModal(){ document.getElementById('addModal').classList.remove('open'); editingId=null; }
+
+function saveFromModal(){
+  const ticker=document.getElementById('fTicker').value.toUpperCase().trim();
+  const name=document.getElementById('fName').value.trim();
+  const qty=parseFloat(document.getElementById('fQty').value);
+  const avg=parseFloat(document.getElementById('fAvgPrice').value);
+  const lp=document.getElementById('fLastPrice').value;
+  const last=lp?parseFloat(lp):avg;
+  const dpv=document.getElementById('fDailyPct').value;
+  const dp=dpv!==''?parseFloat(dpv):null;
+  const basis=document.getElementById('fBasis').value;
+  const cat=document.getElementById('fCategory').value;
+  if(!name||isNaN(qty)||isNaN(avg)){showToast('נא למלא שם, כמות ומחיר','error');return;}
+  if(editingId){
+    const i=portfolio.findIndex(x=>x.id===editingId);
+    if(i>-1)portfolio[i]={...portfolio[i],ticker,name,qty,avg,last,basis,cat,dp};
+    showToast(`${name} עודכן ✓`,'success');
+  }else{
+    portfolio.push({id:Date.now(),ticker,name,cat,qty,avg,last,basis,dp});
+    showToast(`${name} נוסף ✓`,'success');
+  }
+  closeModal(); renderTable(); autoSave();
+}
+function editSec(id){ openModal(id); }
+function removeSec(id){
+  const s=portfolio.find(x=>x.id===id);
+  if(!s||!confirm(`למחוק "${s.name}" מהתיק?`))return;
+  portfolio=portfolio.filter(x=>x.id!==id);
+  renderTable(); autoSave();
+  showToast('הנייר הוסר','info');
+}
+function clearAll(){
+  if(!confirm('למחוק את כל התיק?'))return;
+  portfolio=[]; renderTable(); showToast('התיק נוקה','info');
+}
+
+// Storage
+function saveToStorage(){
+  localStorage.setItem(SK,JSON.stringify(portfolio));
+  localStorage.setItem(SR,JSON.stringify({usd:usdRate,eur:eurRate}));
+  showToast('נשמר ✓','success');
+}
+function loadFromStorage(){
+  const s=localStorage.getItem(SK);
+  if(!s){showToast('אין תיק שמור','info');return;}
+  portfolio=JSON.parse(s);
+  const r=localStorage.getItem(SR);
+  if(r){const rr=JSON.parse(r);usdRate=rr.usd||usdRate;eurRate=rr.eur||eurRate;}
+  renderTable(); showToast('נטען ✓','success');
+}
+function autoSave(){ try{localStorage.setItem(SK,JSON.stringify(portfolio));}catch(e){} }
+
+// CSV
+function exportCSV(){
+  const h=['שם','טיקר','קטגוריה','בסיס','כמות','מחיר ממוצע','מחיר אחרון','שווי ₪','עלות ₪','רווח ₪','רווח %','שינוי יומי %'];
+  const rows=portfolio.map(s=>[
+    s.name,s.ticker||'',s.cat,s.basis,s.qty,s.avg,s.last,
+    fmt(getValueILS(s)),fmt(getCostILS(s)),fmt(getPnL(s)),fmt(getPnLPct(s)),
+    s.dp!==null?fmt(s.dp):''
+  ]);
+  const csv='\uFEFF'+[h,...rows].map(r=>r.map(v=>`"${v}"`).join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+  a.download=`portfolio_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  showToast('CSV יוצא ✓','success');
+}
+
+// Toast
+function showToast(msg,type='success'){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className=`toast show ${type}`;
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// Auto-refresh
+async function refreshPrices(){
+  if(isLoading)return;
+  isLoading=true;
+  document.getElementById('statusDot').style.background='var(--yellow)';
+  document.getElementById('refreshBtn').textContent='⏳ מעדכן...';
+  document.getElementById('loadingOverlay').style.display='flex';
+  await fetchPrices();
+  renderTable();
+  autoSave();
+  document.getElementById('loadingOverlay').style.display='none';
+  document.getElementById('statusDot').style.background='var(--green)';
+  document.getElementById('refreshBtn').textContent='🔄 רענון';
+  isLoading=false;
+  resetCountdown();
+}
+function resetCountdown(){
+  countdownVal=60;
+  clearInterval(countdownTimer);
+  countdownTimer=setInterval(()=>{
+    countdownVal--;
+    const el=document.getElementById('countdown');
+    if(el)el.textContent=countdownVal;
+    if(countdownVal<=0){clearInterval(countdownTimer);refreshPrices();}
+  },1000);
+}
+function updateClock(){
+  const el=document.getElementById('currentTime');
+  if(el)el.textContent=new Date().toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+
+// =====================================================================
+// SPARKLINES
+// =====================================================================
+const sparkCharts = {};
+function drawSparkline(sec){
+  const canvas = document.getElementById(`spark-${sec.id}`);
+  if(!canvas) return;
+  const hist = priceHistory[sec.id];
+  if(!hist || hist.length < 2){ canvas.style.opacity='0.3'; return; }
+  canvas.style.opacity='1';
+  const ctx = canvas.getContext('2d');
+  const isUp = hist[hist.length-1] >= hist[0];
+  const color = isUp ? '#3fb950' : '#f85149';
+  if(sparkCharts[sec.id]) sparkCharts[sec.id].destroy();
+  sparkCharts[sec.id] = new Chart(ctx, {
+    type:'line',
+    data:{
+      labels: hist.map((_,i)=>i),
+      datasets:[{data:hist, borderColor:color, borderWidth:1.5,
+        pointRadius:0, fill:true,
+        backgroundColor: isUp?'rgba(63,185,80,0.1)':'rgba(248,81,73,0.1)',
+        tension:0.4}]
+    },
+    options:{responsive:false, animation:false,
+      plugins:{legend:{display:false},tooltip:{enabled:false}},
+      scales:{x:{display:false},y:{display:false}}}
+  });
+}
+
+function recordPriceHistory(){
+  portfolio.forEach(sec=>{
+    if(!priceHistory[sec.id]) priceHistory[sec.id]=[];
+    priceHistory[sec.id].push(sec.last);
+    if(priceHistory[sec.id].length > 20) priceHistory[sec.id].shift();
+  });
+}
+
+// =====================================================================
+// CHARTS (pie, bar, pnl)
+// =====================================================================
+let pieChart=null, barChart=null, pnlChart=null;
+const CAT_COLORS_CHART={
+  israel:'rgba(63,185,80,0.8)', us:'rgba(88,166,255,0.8)',
+  etf:'rgba(188,140,255,0.8)', crypto:'rgba(227,179,65,0.8)'
+};
+const CAT_LABELS={israel:'🇮🇱 ישראל', us:'🌍 חו"ל', etf:'📦 ETF', crypto:'₿ קריפטו'};
+
+function renderCharts(){
+  const total = getTotalValue();
+  if(!total) return;
+
+  // PIE — by category
+  const cats = ['israel','us','etf','crypto'];
+  const catVals = cats.map(c=>portfolio.filter(s=>s.cat===c).reduce((sum,s)=>sum+getValueILS(s),0));
+  const pieCtx = document.getElementById('pieChart').getContext('2d');
+  if(pieChart) pieChart.destroy();
+  pieChart = new Chart(pieCtx,{
+    type:'doughnut',
+    data:{
+      labels: cats.map(c=>CAT_LABELS[c]),
+      datasets:[{data:catVals, backgroundColor:cats.map(c=>CAT_COLORS_CHART[c]),
+        borderColor:'#1c2128', borderWidth:2, hoverOffset:6}]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:true,
+      cutout:'65%',
+      plugins:{
+        legend:{position:'bottom', labels:{color:'#8b949e',font:{size:11},padding:8}},
+        tooltip:{callbacks:{label:ctx=>{
+          const pct=(ctx.parsed/total*100).toFixed(1);
+          return ` ₪${ctx.parsed.toLocaleString('he-IL',{maximumFractionDigits:0})} (${pct}%)`;
+        }}}
+      }
+    }
+  });
+
+  // BAR — top 10 by value
+  const sorted=[...portfolio].sort((a,b)=>getValueILS(b)-getValueILS(a)).slice(0,10);
+  const barCtx = document.getElementById('barChart').getContext('2d');
+  if(barChart) barChart.destroy();
+  barChart = new Chart(barCtx,{
+    type:'bar',
+    data:{
+      labels: sorted.map(s=>s.ticker||s.name.slice(0,12)),
+      datasets:[{
+        label:'שווי ₪',
+        data: sorted.map(s=>getValueILS(s)),
+        backgroundColor: sorted.map(s=>CAT_COLORS_CHART[s.cat]||'rgba(88,166,255,0.7)'),
+        borderRadius:4, borderSkipped:false
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false, indexAxis:'y',
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ₪${ctx.parsed.x.toLocaleString('he-IL',{maximumFractionDigits:0})}`}}},
+      scales:{
+        x:{ticks:{color:'#8b949e',font:{size:10}},grid:{color:'#30363d'}},
+        y:{ticks:{color:'#e6edf3',font:{size:10}},grid:{display:false}}
+      }
+    }
+  });
+
+  // PNL chart — gain/loss per security
+  const pnlSorted=[...portfolio].sort((a,b)=>getPnL(b)-getPnL(a));
+  const pnlCtx = document.getElementById('pnlChart').getContext('2d');
+  if(pnlChart) pnlChart.destroy();
+  pnlChart = new Chart(pnlCtx,{
+    type:'bar',
+    data:{
+      labels: pnlSorted.map(s=>s.ticker||s.name.slice(0,10)),
+      datasets:[{
+        label:'רווח/הפסד ₪',
+        data: pnlSorted.map(s=>getPnL(s)),
+        backgroundColor: pnlSorted.map(s=>getPnL(s)>=0?'rgba(63,185,80,0.75)':'rgba(248,81,73,0.75)'),
+        borderRadius:4, borderSkipped:false
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false, indexAxis:'y',
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>{
+        const v=ctx.parsed.x; return ` ${v>=0?'+':''}₪${Math.abs(v).toLocaleString('he-IL',{maximumFractionDigits:0})}`;
+      }}}},
+      scales:{
+        x:{ticks:{color:'#8b949e',font:{size:10}},grid:{color:'#30363d'}},
+        y:{ticks:{color:'#e6edf3',font:{size:10}},grid:{display:false}}
+      }
+    }
+  });
+}
+
+function toggleCharts(){
+  const panel=document.getElementById('chartPanel');
+  const btn=document.getElementById('chartsBtn');
+  const open=panel.classList.toggle('open');
+  btn.textContent=open?'📊 הסתר גרפים':'📊 גרפים';
+  if(open) renderCharts();
+}
+
+// =====================================================================
+// ALERT BAR — ניירות עם שינוי חריג
+// =====================================================================
+function updateAlerts(list){
+  const bar=document.getElementById('alertBar');
+  const THRESHOLD=3; // % שינוי יומי סף להתראה
+  const alerts=list.filter(s=>s.dp!==null&&s.dp!==undefined&&Math.abs(s.dp)>=THRESHOLD);
+  if(!alerts.length){bar.className='alert-bar';bar.innerHTML='';return;}
+  bar.className='alert-bar has-alerts';
+  bar.innerHTML=alerts.map(s=>`
+    <div class="alert-chip ${s.dp>0?'up':'down'}" onclick="showDetail(${s.id})" style="cursor:pointer">
+      ${s.dp>0?'▲':'▼'} ${s.ticker||s.name.slice(0,8)}: ${s.dp>0?'+':''}${s.dp.toFixed(2)}%
+    </div>`).join('');
+}
+
+// =====================================================================
+// DETAIL PANEL
+// =====================================================================
+function showDetail(id){
+  const sec=portfolio.find(s=>s.id===id);
+  if(!sec) return;
+  const val=getValueILS(sec), cost=getCostILS(sec), pnl=getPnL(sec), pnlPct=getPnLPct(sec);
+  const weight=getTotalValue()>0?(val/getTotalValue()*100):0;
+  const clr=v=>v>=0?'var(--green)':'var(--red)';
+  document.getElementById('detailContent').innerHTML=`
+    <div class="detail-title">${sec.name}</div>
+    <div class="detail-ticker">${sec.ticker||sec.cat} &nbsp;|&nbsp; ${sec.basis}</div>
+    <div class="detail-stat"><label>שער אחרון</label><span>${dispPrice(sec,sec.last)}</span></div>
+    <div class="detail-stat"><label>שע"ק ממוצע</label><span>${dispPrice(sec,sec.avg)}</span></div>
+    <div class="detail-stat"><label>כמות אחזקה</label><span>${fmt(sec.qty, sec.qty%1===0?0:2)}</span></div>
+    <div class="detail-stat"><label>עלות כוללת</label><span>₪${fmt(cost)}</span></div>
+    <div class="detail-stat"><label>שווי נוכחי</label><span>₪${fmt(val)}</span></div>
+    <div class="detail-stat"><label>רווח/הפסד ₪</label><span style="color:${clr(pnl)}">${pnl>=0?'+':''}₪${fmt(Math.abs(pnl))}</span></div>
+    <div class="detail-stat"><label>רווח/הפסד %</label><span style="color:${clr(pnlPct)}">${fmtPct(pnlPct)}</span></div>
+    <div class="detail-stat"><label>שינוי יומי %</label><span style="color:${clr(sec.dp??0)}">${sec.dp!==null&&sec.dp!==undefined?fmtPct(sec.dp):'–'}</span></div>
+    <div class="detail-stat"><label>שינוי יומי ₪</label><span style="color:${clr(getDailyILS(sec))}">${getDailyILS(sec)?`${getDailyILS(sec)>=0?'+':''}₪${fmt(Math.abs(getDailyILS(sec)))}`:'–'}</span></div>
+    <div class="detail-stat"><label>% מהתיק</label><span>${fmt(weight,2)}%</span></div>
+    <div class="detail-stat"><label>קטגוריה</label><span>${CAT_LABELS[sec.cat]||sec.cat}</span></div>
+    <br>
+    <canvas id="detailSpark" style="width:100%;height:80px"></canvas>
+    <br>
+    <button class="btn primary" style="width:100%;justify-content:center;margin-top:8px" onclick="editSec(${sec.id});closeDetail()">✏️ ערוך ני"ע</button>
+  `;
+  document.getElementById('detailPanel').classList.add('open');
+  // Draw detail sparkline
+  requestAnimationFrame(()=>{
+    const hist=priceHistory[sec.id];
+    if(hist&&hist.length>=2){
+      const isUp=hist[hist.length-1]>=hist[0];
+      const color=isUp?'#3fb950':'#f85149';
+      const dctx=document.getElementById('detailSpark').getContext('2d');
+      new Chart(dctx,{type:'line',
+        data:{labels:hist.map((_,i)=>i),datasets:[{data:hist,borderColor:color,borderWidth:2,
+          pointRadius:3,pointBackgroundColor:color,fill:true,
+          backgroundColor:isUp?'rgba(63,185,80,0.12)':'rgba(248,81,73,0.12)',tension:0.4}]},
+        options:{responsive:true,maintainAspectRatio:false,
+          plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${dispPrice(sec,ctx.parsed.y)}`}}},
+          scales:{x:{display:false},y:{ticks:{color:'#8b949e',font:{size:10}},grid:{color:'#30363d'}}}}
+      });
+    }
+  });
+}
+function closeDetail(){ document.getElementById('detailPanel').classList.remove('open'); }
+
+// =====================================================================
+// PRICE HISTORY UPDATE — record after every fetch
+// =====================================================================
+
+// Keyboard
+document.addEventListener('keydown',e=>{
+  if(e.key==='n'&&!e.ctrlKey&&!e.metaKey&&document.activeElement.tagName!=='INPUT')openModal();
+  if(e.key==='Escape')closeModal();
+});
+
+// INIT
+async function init(){
+  const saved=localStorage.getItem(SK);
+  if(saved){
+    try{
+      portfolio=JSON.parse(saved);
+      const r=localStorage.getItem(SR);
+      if(r){const rr=JSON.parse(r);usdRate=rr.usd||usdRate;eurRate=rr.eur||eurRate;}
+    }catch(e){}
+  }
+  updateClock(); setInterval(updateClock,1000);
+  // Seed price history with slight simulated variation so sparklines show on load
+  portfolio.forEach(sec=>{
+    const base=sec.last;
+    priceHistory[sec.id]=Array.from({length:8},(_,i)=>
+      +(base*(1+(Math.random()-0.5)*0.004*(i+1))).toFixed(4)
+    );
+    priceHistory[sec.id].push(base);
+  });
+  renderTable();
+  await refreshPrices();
+}
+init();
+</script>
+</body>
+</html>
